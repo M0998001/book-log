@@ -1,0 +1,24 @@
+{
+  "name": "Book Log",
+  "short_name": "Book Log",
+  "description": "Log the books you've read, rate them out of 10, and discover your next favorite.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF6EE",
+  "theme_color": "#FBF6EE",
+  "categories": ["books", "lifestyle", "education"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Discover books", "url": "./#discover", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "My reading stats", "url": "./#account", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
