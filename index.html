@@ -250,6 +250,18 @@ select{height:44px;border:1px solid var(--line);border-radius:14px;background:va
 .install img{width:52px;height:52px;border-radius:13px;flex:none}
 .install p{margin:3px 0 0;font-size:14px;color:var(--muted)}
 
+#install-banner{margin:6px 0 14px}
+.ib{position:relative;padding:16px 16px 14px;border-radius:var(--radius);background:linear-gradient(135deg,#FFE3D1,#FFD3CA);color:#3A2620;box-shadow:var(--shadow)}
+[data-theme=dark] .ib{background:linear-gradient(135deg,#3B2A24,#3A2328);color:#F7E6DF}
+.ib .hd{display:flex;gap:12px;align-items:center;padding-right:26px}
+.ib .hd img{width:46px;height:46px;border-radius:12px;flex:none}
+.ib .hd b{display:block;font:700 18px var(--serif)}
+.ib .hd span{font-size:13.5px;opacity:.8}
+.ib ol{margin:12px 0 0;padding-left:22px;font-size:15px;line-height:1.5}
+.ib ol li{margin:4px 0}
+.ib .shareic{display:inline-block;width:18px;height:18px;vertical-align:-3px;color:#0A7AFF}
+.ib .close{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:15px;font-size:18px;line-height:30px;text-align:center;opacity:.6}
+.ib .btn{margin-top:12px;width:100%}
 #toast{position:fixed;left:50%;bottom:calc(var(--tabh) + var(--safe-b) + 86px);transform:translate(-50%,20px);z-index:60;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:14px;font-weight:600;font-size:14.5px;opacity:0;pointer-events:none;transition:.25s;max-width:calc(100% - 40px);text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 .offline{position:sticky;top:calc(var(--safe-t) + 64px);z-index:19;margin:0 0 8px;padding:8px 12px;border-radius:12px;background:#FCE8C8;color:#6A4A10;font-size:13.5px;text-align:center}
@@ -264,6 +276,7 @@ select{height:44px;border:1px solid var(--line);border-radius:14px;background:va
 </header>
 
 <main>
+  <div id="install-banner" hidden></div>
   <div class="offline" id="offline" hidden>You're offline. Your log still works; search will return when you reconnect.</div>
 
   <!-- LOG -->
@@ -1005,7 +1018,36 @@ function renderAccount() {
   $('#a-gp', v).onclick = () => setGoal(1);
   $('#a-install', v)?.addEventListener('click', async () => { deferredInstall.prompt(); await deferredInstall.userChoice.catch(() => {}); deferredInstall = null; renderAccount(); });
 }
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; if (tab === 'account') renderAccount(); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; renderInstallBanner(); if (tab === 'account') renderAccount(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; renderInstallBanner(); toast('Installed! Find Book Log on your home screen'); });
+
+/* ---------- install banner ---------- */
+const SHARE_SVG = '<svg class="shareic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1"/></svg>';
+function platform() {
+  const ua = navigator.userAgent;
+  const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /android/i.test(ua);
+  const inApp = /FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|musical_ly|TikTok|Bytedance|LinkedInApp|Twitter|Pinterest|GSA\/|KAKAOTALK|WhatsApp|Messenger|Discord/i.test(ua) || (android && /; wv\)/.test(ua));
+  const iosOther = ios && /CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+  return { ios, android, inApp, iosOther, mobile: ios || android };
+}
+function isStandalone() { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+function renderInstallBanner() {
+  const el = $('#install-banner');
+  let dismissed = 0; try { dismissed = +localStorage.getItem('booklog.installDismissed') || 0; } catch {}
+  const p = platform();
+  if (isStandalone() || (!p.mobile && !deferredInstall) || Date.now() - dismissed < 3 * 864e5) { el.hidden = true; return; }
+  let steps;
+  if (p.inApp) steps = `<ol><li>This link opened inside another app, which can’t install apps.</li><li>Tap the <b>•••</b> or <b>⋮</b> menu and choose <b>Open in ${p.ios ? 'Safari' : 'Chrome'}</b> (or <b>Open in browser</b>).</li><li>Then come back to this banner for the last step.</li></ol>`;
+  else if (deferredInstall) steps = `<button class="btn" id="ib-install">Install Book Log</button>`;
+  else if (p.ios) steps = `<ol><li>Tap the <b>Share</b> button ${SHARE_SVG} ${p.iosOther ? 'next to the address bar' : 'in Safari'} (on newer iPhones, tap <b>•••</b> first, then <b>Share</b>).</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. Book Log appears on your home screen like any other app.</li></ol>`;
+  else steps = `<ol><li>Tap the <b>⋮</b> menu at the top right of Chrome.</li><li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li><li>Tap <b>Install</b>. Book Log appears with your other apps.</li></ol>`;
+  el.innerHTML = `<div class="ib"><button class="close" id="ib-close" aria-label="Dismiss">✕</button>
+    <div class="hd"><img src="icons/icon.svg" alt=""><div><b>Get the Book Log app</b><span>Free · no app store needed · works offline</span></div></div>${steps}</div>`;
+  el.hidden = false;
+  $('#ib-close').onclick = () => { try { localStorage.setItem('booklog.installDismissed', Date.now()); } catch {} el.hidden = true; };
+  $('#ib-install')?.addEventListener('click', async () => { deferredInstall.prompt(); await deferredInstall.userChoice.catch(() => {}); deferredInstall = null; renderInstallBanner(); });
+}
 
 /* ---------- global ---------- */
 function refresh() {
@@ -1019,7 +1061,7 @@ function netStatus() { $('#offline').hidden = navigator.onLine; }
 addEventListener('online', netStatus); addEventListener('offline', netStatus);
 addEventListener('storage', e => { if (e.key === KEY) { S = load(); applyTheme(); refresh(); } });
 
-applyTheme(); netStatus();
+applyTheme(); netStatus(); renderInstallBanner();
 const startTab = (location.hash || '').slice(1);
 showTab(TITLES[startTab] ? startTab : 'log');
 if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
