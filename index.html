@@ -435,8 +435,10 @@ function norm(d) {
 async function searchBooks(params, limit = 24, signal) {
   const j = await ol('/search.json', { ...params, fields: FIELDS, limit }, signal);
   const seen = new Set();
-  return (j.docs || []).map(norm).filter(b => b.workKey && !seen.has(b.workKey) && seen.add(b.workKey));
+  return (j.docs || []).map(norm).filter(b => b.workKey && !KNOCKOFF.test(b.title) && !KNOCKOFF_AUTH.test(b.author) && !seen.has(b.workKey) && seen.add(b.workKey));
 }
+const KNOCKOFF = /^(summary|summaries|study guide|sparknotes|cliffsnotes|workbook|analysis|conversations on|quicklet|trivia|quiz)\b|\b(summary (and|&) (review|analysis)|book summary|a summary of|study guide|workbook for)\b/i;
+const KNOCKOFF_AUTH = /(summary|summaries|study guide|bookhabits|readtrepreneur|quickread|instaread|worth books)/i;
 const JUNK = /(accessible|protected|daisy|large type|in library|lending|open library|nyt|bestseller|reading level|translations into|english language|^fiction$|fiction, general|^novel|award|staff pick|internet archive|^juvenile|^long now|^readers|^textbook|^\d|general$|^specimens|^open_syllabus)/i;
 function cleanSubjects(list) { return (list || []).filter(s => s && s.length < 40 && !s.includes(':') && !JUNK.test(s)); }
 
@@ -584,7 +586,7 @@ async function addSearch(q) {
     const res = await searchBooks(params, 20, addCtrl.signal);
     if (seq !== addSeq) return;
     if (!res.length) { box.innerHTML = `<p class="hint">No matches for “${esc(q)}”. Try fewer words, or add it manually below.</p>`; return; }
-    box.innerHTML = res.map((b, i) => `<button class="result" data-i="${i}">${cover(b, '', 'S')}<div><div class="t">${esc(b.title)}</div><div class="a">${esc(b.author || 'Unknown author')}${b.year ? ' · ' + b.year : ''}</div>${inLog(b.workKey) ? '<span class="tag">✓ In your log</span>' : ''}</div></button>`).join('');
+    box.innerHTML = res.map((b, i) => `<button class="result" data-i="${i}">${cover(b, '', 'M')}<div><div class="t">${esc(b.title)}</div><div class="a">${esc(b.author || 'Unknown author')}${b.year ? ' · ' + b.year : ''}</div>${inLog(b.workKey) ? '<span class="tag">✓ In your log</span>' : ''}</div></button>`).join('');
     box.onclick = e => { const r = e.target.closest('.result'); if (r) openForm(res[+r.dataset.i]); };
   } catch (err) {
     if (err.name === 'AbortError') return;

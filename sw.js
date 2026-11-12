@@ -1,5 +1,5 @@
 // Book Log service worker: offline app shell, cached covers, network-first catalog data.
-const VERSION = 'booklog-v1';
+const VERSION = 'booklog-v2';
 const SHELL = [
   './', './index.html', './manifest.json',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
